@@ -1,85 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CompositionHouseExample
+namespace LibrarySystem
 {
-    public class Room
+    public abstract class LibraryItem
     {
-        public string Name { get; private set; }
-        public double Area { get; private set; }
-        public bool IsLightOn { get; private set; }
+        public string Title { get; set; }
+        public string Author { get; set; }
 
-        public Room(string name, double area)
+        public LibraryItem(string title, string author)
         {
-            Name = name;
-            Area = area;
-            IsLightOn = false;
+            Title = title;
+            Author = author;
         }
 
-        public void SwitchLight(bool status)
+        public abstract void GetInfo();
+    }
+
+    public interface IDownloadable
+    {
+        void Download();
+    }
+
+    public class Book : LibraryItem
+    {
+        public int PageCount { get; set; }
+
+        public Book(string title, string author, int pageCount)
+            : base(title, author)
         {
-            IsLightOn = status;
-            string stateText = IsLightOn ? "увімкнено" : "вимкнено";
-            Console.WriteLine($"[Кімната: {Name}] Світло {stateText}.");
+            PageCount = pageCount;
         }
 
-        public void DisplayDetails()
+        public override void GetInfo()
         {
-            string stateText = IsLightOn ? "так" : "ні";
-            Console.WriteLine($" - {Name}: площа {Area} кв.м, світло горить: {stateText}");
+            Console.WriteLine($"[Друкована книга] \"{Title}\" — {Author} ({PageCount} стор.)");
         }
     }
 
-    public class House
+    public class EBook : LibraryItem, IDownloadable
     {
-        public string Address { get; set; }
+        public double FileSizeMb { get; set; }
 
-        public List<Room> Rooms { get; private set; }
-
-        public House(string address)
+        public EBook(string title, string author, double fileSizeMb)
+            : base(title, author)
         {
-            Address = address;
-            Rooms = new List<Room>();
-
-            Rooms.Add(new Room("Вітальня", 25.5));
-            Rooms.Add(new Room("Спальня", 16.0));
-            Rooms.Add(new Room("Кухня", 12.0));
+            FileSizeMb = fileSizeMb;
         }
 
-        public void ToggleRoomLight(string roomName, bool turnOn)
+        public override void GetInfo()
         {
-            Room targetRoom = Rooms.Find(r => r.Name.Equals(roomName, StringComparison.OrdinalIgnoreCase));
-
-            if (targetRoom != null)
-            {
-                targetRoom.SwitchLight(turnOn);
-            }
-            else
-            {
-                Console.WriteLine($"Помилка: Кімнату \"{roomName}\" не знайдено в будинку за адресою {Address}.");
-            }
+            Console.WriteLine($"[Електронна книга] \"{Title}\" — {Author} (Розмір: {FileSizeMb} МБ)");
         }
 
-        public void TurnOffAllLights()
+        public void Download()
         {
-            Console.WriteLine($"\nВимкнення всього світла в будинку за адресою: {Address}...");
-            foreach (var room in Rooms)
-            {
-                room.SwitchLight(false);
-            }
-        }
-        public void ShowHouseOverview()
-        {
-            double totalArea = 0;
-            Console.WriteLine($"\n=== Огляд будинку ({Address}) ===");
-
-            foreach (var room in Rooms)
-            {
-                room.DisplayDetails();
-                totalArea += room.Area;
-            }
-
-            Console.WriteLine($"Загальна площа будинку: {totalArea} кв.м (всього кімнат: {Rooms.Count})\n");
+            Console.WriteLine($"Завантаження книги \"{Title}\" ({FileSizeMb} МБ)... Готово!");
         }
     }
 
@@ -89,15 +65,33 @@ namespace CompositionHouseExample
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-            House myHouse = new House("вул. Тараса Шевченко, 12");
+            Book paperBook = new Book("Крах людини", "Дадзай Осаму", 107);
+            EBook digitalBook = new EBook("Собака Баскервілів", "Артур Конан Дойл", 1.2);
 
-            myHouse.ShowHouseOverview();
+            List<LibraryItem> library = new List<LibraryItem>
+            {
+                paperBook,
+                digitalBook
+            };
 
-            Console.WriteLine("=== Керування освітленням ===");
-            myHouse.ToggleRoomLight("Вітальня", true);
-            myHouse.ToggleRoomLight("Кухня", true);
+            Console.WriteLine("=== Інформація про елементи бібліотеки ===");
+            foreach (var item in library)
+            {
+                item.GetInfo();
+            }
 
-            myHouse.TurnOffAllLights();
+            Console.WriteLine("\n=== Перевірка можливості завантаження ===");
+            foreach (var item in library)
+            {
+                if (item is IDownloadable downloadableItem)
+                {
+                    downloadableItem.Download();
+                }
+                else
+                {
+                    Console.WriteLine($"Книгу \"{item.Title}\" неможливо завантажити (це друковане видання).");
+                }
+            }
 
             Console.ReadKey();
         }
